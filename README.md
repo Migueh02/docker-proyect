@@ -1,152 +1,123 @@
-# Dockerized API Project
+# API Node.js con Logs en AWS CloudWatch
 
-Este proyecto es una API básica desarrollada con Node.js y Express, diseñada para ser ejecutada dentro de un contenedor Docker. La API incluye un endpoint para gestionar una lista de tareas (to-do list).
+Esta aplicación es un backend simple en Node.js que envía logs a AWS CloudWatch y está diseñada para ser desplegada en Amazon ECS (Elastic Container Service).
 
-## Estructura del Proyecto
+## Funcionalidades
 
-```
-/home/migueh/repositorys/docker-proyect
-├── Dockerfile
-├── .dockerignore
-├── package.json
-├── index.js
-├── routes/
-│   └── todos.js
-└── README.md
-```
+- Servidor Express básico
+- Configuración de logs con Winston
+- Integración con AWS CloudWatch para gestión de logs
+- Dockerización para despliegue en Amazon ECS
 
-### Archivos principales
+## Requisitos previos
 
-- **`index.js`**: Archivo principal que configura el servidor Express y define las rutas base.
-- **`routes/todos.js`**: Archivo que contiene las rutas para gestionar las tareas (to-do list).
-- **`Dockerfile`**: Archivo que define cómo construir la imagen de Docker.
-- **`.dockerignore`**: Archivo que excluye archivos innecesarios del contexto de construcción de Docker.
+- Node.js (v12+)
+- Docker
+- Cuenta de AWS con permisos para CloudWatch y ECS
+- AWS CLI configurado (para despliegue)
 
----
+## Desarrollo local
 
-## Instalación y Ejecución
-
-### Requisitos previos
-
-- [Node.js](https://nodejs.org/) (versión 18 o superior)
-- [Docker](https://www.docker.com/)
-- [NPM](https://www.npmjs.com/)
-
-### Pasos para ejecutar el proyecto localmente
-
-1. Clona este repositorio:
-   ```bash
-   git clone <URL_DEL_REPOSITORIO>
-   cd docker-proyect
+1. Instalar dependencias:
    ```
-
-2. Instala las dependencias:
-   ```bash
    npm install
    ```
 
-3. Ejecuta el servidor en modo desarrollo:
-   ```bash
+2. Configurar variables de entorno (copiar `.env.example` a `.env` y editar según sea necesario)
+
+3. Iniciar en modo desarrollo:
+   ```
    npm run dev
    ```
 
-4. Accede a la API en `http://localhost:3000`.
+## Uso con Docker (local)
 
----
-
-## Uso de Docker
-
-### Construir la imagen de Docker
-
-1. Asegúrate de que el demonio de Docker esté en ejecución:
-   ```bash
-   sudo systemctl start docker
+1. Construir la imagen:
+   ```
+   docker build -t node-cloudwatch-app .
    ```
 
-2. Construye la imagen de Docker:
-   ```bash
-   docker build -t dockerized-api .
+2. Ejecutar el contenedor:
+   ```
+   docker run -p 3000:3000 --env-file .env node-cloudwatch-app
    ```
 
-### Ejecutar el contenedor
+O simplemente usar docker-compose:
+```
+docker-compose up
+```
 
-1. Inicia el contenedor:
-   ```bash
-   docker run -p 3000:3000 dockerized-api
-   ```
+## Endpoints
 
-2. Accede a la API en `http://localhost:3000`.
+- `GET /`: Ruta principal, devuelve un mensaje de éxito
+- `GET /error`: Genera un error intencional para probar los logs en CloudWatch
 
----
+## Despliegue en AWS ECS
 
-## Endpoints de la API
+### 1. Crear un repositorio ECR
 
-### Base URL
-`http://localhost:3000`
+```bash
+aws ecr create-repository --repository-name node-cloudwatch-app
+```
 
-### Rutas disponibles
+### 2. Autenticar Docker con ECR
 
-#### **GET /**
+```bash
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin [CUENTA_AWS].dkr.ecr.[REGION].amazonaws.com
+```
 
-- **Descripción**: Devuelve un mensaje de bienvenida.
-- **Respuesta**:
-  ```json
-  "Hello, Dockerized World!"
-  ```
+### 3. Etiquetar y subir la imagen
 
-#### **GET /api/todos**
+```bash
+docker build -t [CUENTA_AWS].dkr.ecr.[REGION].amazonaws.com/node-cloudwatch-app:latest .
+docker push [CUENTA_AWS].dkr.ecr.[REGION].amazonaws.com/node-cloudwatch-app:latest
+```
 
-- **Descripción**: Obtiene todas las tareas.
-- **Respuesta**:
-  ```json
-  [
-    { "id": 1, "title": "Task 1", "completed": false }
-  ]
-  ```
+### 4. Crear una definición de tarea ECS
 
-#### **POST /api/todos**
-
-- **Descripción**: Crea una nueva tarea.
-- **Cuerpo de la solicitud**:
-  ```json
-  { "title": "New Task" }
-  ```
-- **Respuesta**:
-  ```json
-  { "id": 2, "title": "New Task", "completed": false }
-  ```
-
-#### **PUT /api/todos/:id**
-
-- **Descripción**: Actualiza una tarea existente.
-- **Cuerpo de la solicitud**:
-  ```json
-  { "title": "Updated Task", "completed": true }
-  ```
-- **Respuesta**:
-  ```json
-  { "id": 1, "title": "Updated Task", "completed": true }
-  ```
-
-#### **DELETE /api/todos/:id**
-
-- **Descripción**: Elimina una tarea por ID.
-- **Respuesta**: Código de estado `204 No Content`.
-
----
-
-## Notas adicionales
-
-- **BuildKit**: Se recomienda habilitar BuildKit para construir imágenes de Docker de manera más eficiente. Puedes habilitarlo temporalmente con:
+- Crear un archivo JSON para la definición de tarea (task-definition.json)
+- Registrar la definición de tarea:
   ```bash
-  DOCKER_BUILDKIT=1 docker build -t dockerized-api .
+  aws ecs register-task-definition --cli-input-json file://task-definition.json
   ```
 
-- **Archivos ignorados**: El archivo `.dockerignore` asegura que `node_modules` y otros archivos innecesarios no se incluyan en la imagen de Docker.
+### 5. Crear un servicio ECS
 
----
+- Utilizar la consola de AWS o el CLI para crear un servicio en un clúster ECS existente o nuevo
 
-## Autor
+## Configuración de IAM para CloudWatch
 
-Proyecto desarrollado por **Migueh**.
+Para que la aplicación pueda enviar logs a CloudWatch, necesita los siguientes permisos:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogStreams"
+      ],
+      "Resource": "arn:aws:logs:*:*:*"
+    }
+  ]
+}
+```
+
+## Variables de entorno para producción
+
+- `NODE_ENV`: Establecer a 'production'
+- `PORT`: Puerto donde se ejecutará la aplicación (por defecto 3000)
+- `ENABLE_CLOUDWATCH`: Establecer a 'true' para activar los logs en CloudWatch
+- `AWS_REGION`: Región de AWS donde se encuentra CloudWatch
+- `CLOUDWATCH_GROUP_NAME`: Nombre del grupo de logs en CloudWatch
+
+## Notas importantes
+
+- En producción, NO utilizar credenciales AWS en variables de entorno. Utilizar roles IAM para el servicio ECS.
+- Ajustar la retención de logs en CloudWatch según necesidades para controlar costos.
+- Monitorear el uso de CloudWatch para evitar cargos inesperados.
 

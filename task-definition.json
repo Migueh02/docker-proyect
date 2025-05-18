@@ -1,0 +1,64 @@
+{
+  "family": "node-cloudwatch-app",
+  "executionRoleArn": "arn:aws:iam::571600864886:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::571600864886:role/ecsCloudWatchRole",
+  "networkMode": "awsvpc",
+  "containerDefinitions": [
+    {
+      "name": "node-cloudwatch-app",
+      "image": "571600864886.dkr.ecr.us-east-1.amazonaws.com/node-cloudwatch-app:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "hostPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "PORT",
+          "value": "3000"
+        },
+        {
+          "name": "ENABLE_CLOUDWATCH",
+          "value": "true"
+        },
+        {
+          "name": "AWS_REGION",
+          "value": "us-east-1"
+        },
+        {
+          "name": "CLOUDWATCH_GROUP_NAME",
+          "value": "/node-cloudwatch-app/production"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/node-cloudwatch-app",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "cpu": 256,
+      "memory": 512,
+      "ulimits": [
+        {
+          "name": "nofile",
+          "softLimit": 65536,
+          "hardLimit": 65536
+        }
+      ]
+    }
+  ],
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "256",
+  "memory": "512"
+} 

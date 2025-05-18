@@ -1,14 +1,31 @@
 {
-  "name": "dockerized-api",
+  "name": "docker-proyect",
   "version": "1.0.0",
-  "description": "A small Node.js API for Docker",
+  "description": "Este proyecto es una API básica desarrollada con Node.js y Express, diseñada para ser ejecutada dentro de un contenedor Docker. La API incluye un endpoint para gestionar una lista de tareas (to-do list).",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Migueh02/docker-proyect.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Migueh02/docker-proyect/issues"
+  },
+  "homepage": "https://github.com/Migueh02/docker-proyect#readme",
   "dependencies": {
-    "express": "^4.18.2"
+    "aws-sdk": "^2.1692.0",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "winston": "^3.17.0",
+    "winston-cloudwatch": "^6.3.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"

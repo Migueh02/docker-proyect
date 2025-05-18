@@ -1,20 +1,24 @@
-# Use the official Node.js image as the base image
 FROM node:18-alpine
 
-# Set the working directory inside the container
-WORKDIR /app
+# Crear directorio de la aplicación
+WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json
+# Copiar archivos de dependencias
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Instalar dependencias
+RUN npm ci --only=production
 
-# Copy the rest of the application code
+# Copiar código fuente
 COPY . .
 
-# Expose the port the app runs on
+# Puerto que expone el contenedor
 EXPOSE 3000
 
-# Define the command to run the application
-CMD ["npm", "start"]
+# Variables de entorno para producción
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV ENABLE_CLOUDWATCH=true
+
+# Comando para iniciar la aplicación
+CMD ["node", "index.js"] 
